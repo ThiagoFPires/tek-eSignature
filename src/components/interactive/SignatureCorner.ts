@@ -1,7 +1,7 @@
 export class SignatureCorner {
     x: number = 0;
     y: number = 0;
-    radius: number = 5;
+    radius: number = 15;
     cursor: string = 'default';
     isMouseOver: (mouseX: number, mouseY: number) => boolean;
         
