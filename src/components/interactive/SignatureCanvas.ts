@@ -30,9 +30,15 @@ export class SignatureCanvas {
         this.canvas.style.height = styleHeight;
         this.canvasWidthRatio = this.canvas.width / parseInt(this.canvas.style.width);
         this.canvasHeightRatio = this.canvas.height / parseInt(this.canvas.style.height);  
+        
         this.canvas.addEventListener('mousemove', this.mouseMouveHandler.bind(this));
         this.canvas.addEventListener('mousedown', this.mouseDownHandler.bind(this));
-        this.canvas.addEventListener('mouseup', this.mouseUpHandler.bind(this));        
+        this.canvas.addEventListener('mouseup', this.mouseUpHandler.bind(this));      
+
+        // Mobile
+        this.canvas.addEventListener('touchstart', this.handleTouchStart.bind(this));
+        this.canvas.addEventListener('touchend', this.handleTouchEnd.bind(this));
+        this.canvas.addEventListener('touchmove', this.handleTouchMove.bind(this));
         
         this.canvas2dContext = this.canvas.getContext('2d')!;        
 
@@ -146,6 +152,50 @@ export class SignatureCanvas {
             x: (mouseX - rect.x) * this.canvasWidthRatio,
             y: (mouseY - rect.top) * this.canvasHeightRatio,
         };
+    }
+
+    getTouchPos(event: TouchEvent) {
+        var rect = this.canvas.getBoundingClientRect();
+        return {
+          x: event.touches[0].clientX - rect.left,
+          y: event.touches[0].clientY - rect.top
+        };
+      }
+
+    private handleTouchStart(event: TouchEvent) {
+        const x = (event.touches[0].clientX);
+        const y = event.touches[0].clientY;
+        let focusedCorner: keyof CornersPositions | undefined = Object.entries(this.signature.corners).find(keyValue => keyValue[1].isMouseOver(x, y))?.[0] as keyof CornersPositions;        
+
+        if (focusedCorner || this.signature.isMouseOver(x, y)) {
+            event.preventDefault();
+        }
+        
+        var mouseEvent = new MouseEvent("mousedown", {
+            clientX: x,
+            clientY: y
+          });
+          this.canvas.dispatchEvent(mouseEvent);
+        
+    }
+
+    private handleTouchEnd(event: TouchEvent) {
+        this.draggingSignature = false;
+        this.resizingSignature = false;
+    }
+
+    private handleTouchMove(event: TouchEvent) {    
+        if(this.draggingSignature || this.resizingSignature) {
+            event.preventDefault();
+        }      
+        const  x = event.touches[0].clientX;
+        const y = event.touches[0].clientY;
+        
+        var mouseEvent = new MouseEvent("mousemove", {
+            clientX: x,
+            clientY: y
+          });
+          this.canvas.dispatchEvent(mouseEvent);
     }
 
     get(): HTMLCanvasElement {
