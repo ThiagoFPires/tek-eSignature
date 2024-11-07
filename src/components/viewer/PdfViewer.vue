@@ -200,7 +200,7 @@ defineExpose({
 
 <template>
   <v-toolbar color="#323639" id="pdf-viewer-toolbar" height="40" class="pa-2">
-    <v-toolbar-title> {{ pdfFileName }}</v-toolbar-title>
+    <v-toolbar-title class="text-subtitle-2"> {{ pdfFileName }}</v-toolbar-title>
     <v-spacer></v-spacer>
     <v-divider vertical class="mx-1"></v-divider>
     <div>
