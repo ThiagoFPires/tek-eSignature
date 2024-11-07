@@ -6,11 +6,13 @@ import { jsPDF } from "jspdf";
 import { SignatureCanvas } from '../interactive/SignatureCanvas';
 import { ISignatureImage } from '../signature/ISignatureImage';
 import { ViewerEvents } from './ViewerEvents';
+import { useDisplay } from 'vuetify'
 
 defineProps<{
   pdfPath: string;  
 }>();
 
+const { mobile } = useDisplay();
 const emit = defineEmits<ViewerEvents>();
 
 const showSignaturePad = ref(false);
@@ -104,6 +106,7 @@ function handleOnResize(): void {
     <PdfViewer 
         ref="viewerRef" 
         :pdf-path="pdfPath"
+        :mobile="mobile"
         @on-print-pages-error="handlePrintPagesError"   
         @on-resize="handleOnResize"     
     >

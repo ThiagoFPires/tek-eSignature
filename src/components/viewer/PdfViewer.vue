@@ -8,6 +8,7 @@ import { ViewerEvents } from "./ViewerEvents";
 // Props
 const props = defineProps<{
   pdfPath: string;
+  mobile: boolean;
 }>();
 
 // Eventos
@@ -37,7 +38,7 @@ const viewports = {
 
 let pdfDoc: PDFDocumentProxy;
 const mask = "###############";
-let currentPageScale = ref(2.5);
+let currentPageScale = ref(props.mobile ? 1 : 2.5);
 const outputScale = window.devicePixelRatio || 1;
 
 onMounted(async () => {
@@ -62,11 +63,7 @@ onMounted(async () => {
   currentPage.value = 1;
   pagesCanvas.value = [];  
 
-  if (await checkViewportBiggerThanScreen()) {
-    await fitPagesToScreen();
-  } else {
-    await printAllPages();
-  }
+  await printAllPages();
 
   loadingPdfDoc.value = false;
 });
@@ -115,19 +112,12 @@ async function fitPagesToScreen() {
   const viewportScaleOne = page!.getViewport({ scale: 1 });
   const maxViewport =
     (pdfViewer.value!.clientWidth * canvasVisualSizeDivider) / outputScale;
-  const maxScale = Math.floor(maxViewport / viewportScaleOne.width);
+  const maxScale = maxViewport / viewportScaleOne.width;
   currentPageScale.value = maxScale;
 
   await printAllPages();
   
   emit('onResize');
-}
-
-async function checkViewportBiggerThanScreen(): Promise<boolean> {
-  const page = await pdfDoc.getPage(1);
-  const viewport = page!.getViewport({ scale: currentPageScale.value });
-
-  return (viewport.width * outputScale) / canvasVisualSizeDivider > pdfViewer.value!.clientWidth;
 }
 
 async function printPage(
@@ -140,10 +130,14 @@ async function printPage(
   // Resolução
   canvas.width = Math.floor(viewport.width * outputScale);
   canvas.height = Math.floor(viewport.height * outputScale);
-
-  // Tamanho visual do canvas
   canvas.style.width = `${canvas.width / canvasVisualSizeDivider}px`;
   canvas.style.height = `${canvas.height / canvasVisualSizeDivider}px`;
+
+  if (props.mobile) {
+    console.log(props.mobile, pdfViewerContainer.value!.parentElement!.clientWidth)
+    canvas.style.width = Math.floor(viewport.width) * (pdfViewerContainer.value!.parentElement!.clientWidth / viewport.width) - 15 + 'px';
+    canvas.style.height = Math.floor(viewport.height) * (pdfViewerContainer.value!.parentElement!.clientWidth / viewport.width) - 15 + 'px';
+  }
 
   const transform =
     outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : undefined;
@@ -240,8 +234,8 @@ defineExpose({
         @click="navigateToNextPage"
       />
     </div>
-    <v-divider vertical class="mx-1"></v-divider>
-    <v-item-group>
+    <v-divider vertical class="mx-1" v-if="!mobile"></v-divider>
+    <v-item-group v-if="!mobile">
       <v-btn        
         density="compact"
         variant="text"
