@@ -111,7 +111,7 @@ async function fitPagesToScreen() {
   const page = await pdfDoc.getPage(1);
   const viewportScaleOne = page!.getViewport({ scale: 1 });
   const maxViewport =
-    (pdfViewer.value!.clientWidth * canvasVisualSizeDivider) / outputScale;
+    ((pdfViewer.value!.clientWidth * canvasVisualSizeDivider) / outputScale) - 30;
   const maxScale = maxViewport / viewportScaleOne.width;
   currentPageScale.value = maxScale;
 
