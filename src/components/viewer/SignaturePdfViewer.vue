@@ -18,6 +18,7 @@ const emit = defineEmits<ViewerEvents>();
 const showSignaturePad = ref(false);
 const viewerRef = ref();
 const isSigned = ref(false);
+const isFinished = ref(false);
 let signatureCanvas: SignatureCanvas;
 
 function onSaveSignature(signature: ISignatureImage) {
@@ -72,6 +73,8 @@ viewerRef.value.pagesCanvas.forEach((canvas: HTMLCanvasElement, canvasIndex:  nu
     else{
         pdf.addImage(canvas.toDataURL('image/jpeg', 0.9), 0, 0, viewerRef.value.viewports.default.width, viewerRef.value.viewports.default.height, '', 'FAST');                                  
     }
+
+    isFinished.value = true;
 });   
 }
 
@@ -100,6 +103,11 @@ function handleOnResize(): void {
                                     signatureCanvas.getSignature().currentWidth * widthScale,   
                                     signatureCanvas.getSignature().currentHeight * heightScale);                                           
 }
+
+function deleteSignature() {
+    signatureCanvas.get().remove();
+    isSigned.value = false;
+}
 </script>
 
 <template>    
@@ -111,13 +119,23 @@ function handleOnResize(): void {
         @on-resize="handleOnResize"     
     >
         <template #toolbarButtons>
-            <v-btn                 
+            <v-btn            
+                v-if="!isSigned"     
                 icon="mdi-file-sign" 
                 variant="text" 
                 color="white" 
                 density="compact" 
                 @click="showSignaturePad = true"
-                :disabled="isSigned || viewerRef?.loadingPdfDoc"
+                :disabled="isFinished || viewerRef?.loadingPdfDoc"
+            />
+            <v-btn    
+                v-if="isSigned"                 
+                icon="mdi-pen-remove" 
+                variant="text" 
+                color="white" 
+                density="compact" 
+                @click="deleteSignature"
+                :disabled="isFinished || viewerRef?.loadingPdfDoc"
             />
             <v-btn                 
                 icon="mdi-file-check-outline"
