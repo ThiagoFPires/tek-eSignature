@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { SignatureType } from './SignatureType';
 import SignaturePad, { PointGroup } from 'signature_pad';
-import { onMounted, onUnmounted, ref } from 'vue';
+import { ref } from 'vue';
 import { ISignatureImage } from './ISignatureImage';
-import { Buffer } from 'buffer'; // Adicionado para corrigir o uso de Buffer no navegador
 
 const { width = 400, 
         height = 120, 
@@ -29,17 +28,17 @@ onMounted(() => {
     signaturePad.clear();
     signaturePad.on();
     signaturePad.addEventListener('beginStroke', () => {
-        undoPoints = [];
+        undoPoints = []
     });
 
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
-});
+})
 
 onUnmounted(() => {
     signaturePad.off();
     window.removeEventListener('resize', resizeCanvas);
-});
+})
 
 function clearCanvas() {
     undoPoints = signaturePad.toData();
@@ -49,7 +48,7 @@ function clearCanvas() {
 function undoAction() {
     const data = signaturePad.toData();
     if (data.length === 0) {
-        return;
+        return
     }
     
     undoPoints.push(data.pop()!);
@@ -57,7 +56,7 @@ function undoAction() {
 }
 
 function redoAction() {    
-    if (undoPoints.length === 0) {
+    if(undoPoints.length === 0) {
         return;
     }
 
@@ -75,7 +74,7 @@ function resizeCanvas() {
     signaturePad.clear();
 }
 
-async function saveSignature() {
+function saveSignature() {
     var type;
     switch (signatureType) {
         case 'jpeg':
@@ -88,45 +87,13 @@ async function saveSignature() {
             type = 'image/svg+xml';
             break;
     }
-
-    const dataURL = signaturePad.toDataURL(type);
-    const base64Data = dataURL.split(',')[1];
-    const blob = new Blob([Buffer.from(base64Data, 'base64')], { type });
-
-    // Configuração do S3
-    const bucketName = '';
-    const region = '';
-    const accessKeyId = '';
-    const secretAccessKey = '';
-
-    // Upload para o S3
-    const AWS = await import('aws-sdk');
-    const s3 = new AWS.S3({
-        region,
-        accessKeyId,
-        secretAccessKey,
-    });
-
-    const params = {
-        Bucket: bucketName,
-        Key: `assinaturas/${Date.now()}.png`, // Caminho no S3
-        Body: blob,
-        ContentType: type,
-    };
-
-    try {
-        const uploadResult = await s3.upload(params).promise();
-        console.log('Upload concluído:', uploadResult);
-
-        emit('onSave', {
-            width: width,
-            height: height,
-            type: signatureType,
-            dataURL: dataURL,
-        });
-    } catch (error) {
-        console.error('Erro ao fazer upload para o S3:', error);
-    }
+    
+    emit('onSave', {
+        width: width,
+        height: height,
+        type: signatureType,
+        dataURL: signaturePad.toDataURL(type),
+    });        
 }
 </script>
 
@@ -135,7 +102,7 @@ async function saveSignature() {
         <v-sheet width="fit-content" height="fit-content" :elevation="3" class="px-5" rounded>      
             <v-toolbar height="40" color="white">
                 <v-tabs density="compact" v-model="tabModel" color="primary">
-                    <v-tab value="draw"> <v-icon size="x-large"> mdi-draw </v-icon> </v-tab>                                                 
+                    <v-tab value="draw"> <v-icon size="x-large"> mdi-draw </v-icon> </v-tab>                                                
                 </v-tabs>
                 <v-spacer></v-spacer>
                 <v-btn size="small" density="comfortable" icon="mdi-arrow-u-left-top" @click.stop="undoAction" />
@@ -154,7 +121,7 @@ async function saveSignature() {
                 <v-btn size="small" text="Confirmar" variant="elevated" color="success" @click.stop="saveSignature"></v-btn>    
             </div>                
         </v-sheet>
-    </v-container>
+</v-container>
 </template>
 
 <style scoped>
