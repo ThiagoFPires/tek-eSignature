@@ -11,9 +11,7 @@
   "dependencies": {
     "@mdi/font": "7.4.47",
     "@types/vue-the-mask": "^0.11.5",
-    "aws-sdk": "^2.1692.0",
     "core-js": "^3.37.1",
-    "dotenv": "^16.4.7",
     "jspdf": "^2.5.2",
     "pdfjs-dist": "^4.6.82",
     "roboto-fontface": "*",
