@@ -15,7 +15,7 @@
     "jspdf": "^2.5.2",
     "pdfjs-dist": "^4.6.82",
     "roboto-fontface": "*",
-    "signature_pad": "^5.0.4",
+    "signature_pad": "^5.0.3",
     "vue": "^3.4.31",
     "vue-the-mask": "^0.11.1",
     "vuetify": "^3.6.11"
@@ -23,7 +23,6 @@
   "devDependencies": {
     "@babel/types": "^7.24.7",
     "@types/node": "^20.14.10",
-    "@types/signature_pad": "^2.3.6",
     "@vitejs/plugin-vue": "^5.0.5",
     "@vue/eslint-config-typescript": "^13.0.0",
     "eslint": "^8.57.0",
