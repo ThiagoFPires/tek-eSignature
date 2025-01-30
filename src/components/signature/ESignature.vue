@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { SignatureType } from './SignatureType';
 import SignaturePad, { PointGroup } from 'signature_pad';
-import { ref } from 'vue';
+import { onMounted, onUnmounted, ref } from 'vue';
 import { ISignatureImage } from './ISignatureImage';
 
 const { width = 400, 
