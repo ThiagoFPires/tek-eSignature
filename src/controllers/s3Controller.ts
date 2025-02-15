@@ -15,8 +15,11 @@ export const uploadFile = async (req: Request, res: Response, next: NextFunction
     const fileStream = fs.createReadStream(filePath);
     const fileName = req.file.originalname || `file-${Date.now()}`;
 
+    // Verificar se o nome do bucket foi carregado corretamente
+    console.log('Bucket Name:', bucketName); // Verifique se está retornando o nome correto
+
     const params = {
-      Bucket: bucketName,
+      Bucket: bucketName, // Usar o bucketName da configuração
       Key: fileName,
       Body: fileStream,
       ContentType: req.file.mimetype || 'application/octet-stream',
@@ -41,7 +44,7 @@ export const downloadFile = async (req: Request, res: Response, next: NextFuncti
     }
 
     const params = {
-      Bucket: bucketName,
+      Bucket: bucketName, // Usar o bucketName da configuração
       Key: filename,
     };
 
