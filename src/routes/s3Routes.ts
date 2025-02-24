@@ -1,11 +1,11 @@
 import express from 'express';
 import { upload } from '../middlewares/uploadMiddleware';
-import { uploadFile, downloadFile } from '../controllers/s3Controller';
+import { uploadFile, viewFile } from '../controllers/s3Controller';
 import { asyncHandler } from '../utils/asyncHandler';
 
 const router = express.Router();
 
 router.post('/upload', upload.single('file'), asyncHandler(uploadFile));
-router.get('/download/:filename', asyncHandler(downloadFile));
+router.get('/view/:filename', asyncHandler(viewFile));
 
 export default router;

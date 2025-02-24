@@ -35,7 +35,7 @@ export const uploadFile = async (req: Request, res: Response, next: NextFunction
   }
 };
 
-export const downloadFile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const viewFile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { filename } = req.params;
     if (!filename) {
@@ -44,14 +44,20 @@ export const downloadFile = async (req: Request, res: Response, next: NextFuncti
     }
 
     const params = {
-      Bucket: bucketName, // Usar o bucketName da configuração
+      Bucket: bucketName,
       Key: filename,
     };
 
     const command = new GetObjectCommand(params);
     const data = await s3.send(command);
 
-    res.setHeader('Content-Type', data.ContentType || 'application/octet-stream');
+    // Verificar o tipo do arquivo
+    const contentType = data.ContentType || 'application/octet-stream';
+
+    // Configura o cabeçalho para exibir o arquivo na tela em vez de baixar
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', 'inline');
+
     if (data.Body) {
       (data.Body as NodeJS.ReadableStream).pipe(res);
     } else {
