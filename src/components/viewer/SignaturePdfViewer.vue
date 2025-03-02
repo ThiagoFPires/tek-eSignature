@@ -6,6 +6,7 @@ import { jsPDF } from "jspdf";
 import { SignatureCanvas } from '../interactive/SignatureCanvas';
 import { ISignatureImage } from '../signature/ISignatureImage';
 import { ViewerEvents } from './ViewerEvents';
+import axios from 'axios';
 
 defineProps<{
   pdfPath: string;  
@@ -42,35 +43,57 @@ function onSaveSignature(signature: ISignatureImage) {
 }
 
 async function onSaveSignedPdf() {    
-const pdf = new jsPDF({
-    unit: 'pt',
-    orientation: viewerRef.value.viewports.default.width > viewerRef.value.viewports.default.height ? 'landscape' : 'portrait',
-    format: [viewerRef.value.viewports.default.width, viewerRef.value.viewports.default.height],
-    putOnlyUsedFonts: true,
-    floatPrecision: 16,
-    compress: true,
-});
+    const pdf = new jsPDF({
+        unit: 'pt',
+        orientation: viewerRef.value.viewports.default.width > viewerRef.value.viewports.default.height ? 'landscape' : 'portrait',
+        format: [viewerRef.value.viewports.default.width, viewerRef.value.viewports.default.height],
+        putOnlyUsedFonts: true,
+        floatPrecision: 16,
+        compress: true,
+    });
 
-viewerRef.value.pagesCanvas.forEach((canvas: HTMLCanvasElement, canvasIndex:  number) => {
-    if (canvasIndex > 0) {
-        pdf.addPage();
-    }
-    
-    if (canvas.parentElement === signatureCanvas.get().parentElement) {
+    viewerRef.value.pagesCanvas.forEach((canvas: HTMLCanvasElement, canvasIndex:  number) => {
+        if (canvasIndex > 0) {
+            pdf.addPage();
+        }
         
-        canvas.getContext('2d')!.drawImage(signatureCanvas.getSignature().img, 
-                                            signatureCanvas.getSignature().corners.topLeft.x,
-                                            signatureCanvas.getSignature().corners.topLeft.y,
-                                            signatureCanvas.getSignature().currentWidth,
-                                            signatureCanvas.getSignature().currentHeight);                                                                                                  
-        pdf.addImage(canvas.toDataURL('image/jpeg', 0.9), 0, 0, viewerRef.value.viewports.default.width, viewerRef.value.viewports.default.height, '', 'FAST');            
-        signatureCanvas.get().remove();                             
-        pdf.save('novo_documento.pdf');            
+        if (canvas.parentElement === signatureCanvas.get().parentElement) {
+            
+            canvas.getContext('2d')!.drawImage(signatureCanvas.getSignature().img, 
+                                                signatureCanvas.getSignature().corners.topLeft.x,
+                                                signatureCanvas.getSignature().corners.topLeft.y,
+                                                signatureCanvas.getSignature().currentWidth,
+                                                signatureCanvas.getSignature().currentHeight);                                                                                                  
+            pdf.addImage(canvas.toDataURL('image/jpeg', 0.9), 0, 0, viewerRef.value.viewports.default.width, viewerRef.value.viewports.default.height, '', 'FAST');            
+            signatureCanvas.get().remove();                             
+        }
+        else{
+            pdf.addImage(canvas.toDataURL('image/jpeg', 0.9), 0, 0, viewerRef.value.viewports.default.width, viewerRef.value.viewports.default.height, '', 'FAST');                                  
+        }
+    });
+
+    // Converte o PDF para formato Blob
+    const pdfBlob = pdf.output('blob');
+
+    // Cria o FormData para enviar o PDF
+    const formData = new FormData();
+    formData.append('file', pdfBlob, 'signed_document.pdf');
+
+    try {
+        // Envia para a API (substitua 'YOUR_API_URL' pela URL real da sua API)
+        const response = await axios.post('http://localhost:4000/s3/upload', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data', // Necessário para envio de arquivos
+                // Caso precise de autenticação, adicione o cabeçalho de Authorization
+                'Authorization': 'Bearer YOUR_ACCESS_TOKEN',
+            },
+        });
+
+        console.log('PDF enviado com sucesso:', response.data);
+        // Você pode tratar a resposta da API aqui (ex. URL do PDF no S3)
+    } catch (error) {
+        console.error('Erro ao enviar PDF para a API:', error);
     }
-    else{
-        pdf.addImage(canvas.toDataURL('image/jpeg', 0.9), 0, 0, viewerRef.value.viewports.default.width, viewerRef.value.viewports.default.height, '', 'FAST');                                  
-    }
-});   
 }
 
 function handlePrintPagesError(error: Error) {
