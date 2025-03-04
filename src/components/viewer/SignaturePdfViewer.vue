@@ -8,13 +8,13 @@ import { ISignatureImage } from '../signature/ISignatureImage';
 import { ViewerEvents } from './ViewerEvents';
 import axios from 'axios';
 
-defineProps<{
-  pdfPath: string;  
-}>();
+defineProps<{ pdfPath: string }>();
 
 const emit = defineEmits<ViewerEvents>();
 
 const showSignaturePad = ref(false);
+const showSuccessPopup = ref(false); // Pop-up de sucesso
+const showErrorPopup = ref(false);   // Pop-up de erro
 const viewerRef = ref();
 const isSigned = ref(false);
 let signatureCanvas: SignatureCanvas;
@@ -30,12 +30,11 @@ function onSaveSignature(signature: ISignatureImage) {
     signatureCanvas.get().id = 'signature-canvas';
     lastPageCanvas.parentElement.appendChild(signatureCanvas.get());
 
-    const widthScale =  (signatureCanvas.get().width) / viewerRef.value.viewports.initial.width;
-    const heightScale =  (signatureCanvas.get().height) / viewerRef.value.viewports.initial.height;
+    const widthScale = (signatureCanvas.get().width) / viewerRef.value.viewports.initial.width;
+    const heightScale = (signatureCanvas.get().height) / viewerRef.value.viewports.initial.height;
     const width = signature.width * widthScale;
     const height = signature.height * heightScale;
 
-    // -10 Apenas para descolar do canto direito e inferior...
     signatureCanvas.drawSignature(signature.dataURL, signatureCanvas.width - width - 10 , signatureCanvas.height - height - 10, width, height);
 
     isSigned.value = true;    
@@ -52,13 +51,12 @@ async function onSaveSignedPdf() {
         compress: true,
     });
 
-    viewerRef.value.pagesCanvas.forEach((canvas: HTMLCanvasElement, canvasIndex:  number) => {
+    viewerRef.value.pagesCanvas.forEach((canvas: HTMLCanvasElement, canvasIndex: number) => {
         if (canvasIndex > 0) {
             pdf.addPage();
         }
         
         if (canvas.parentElement === signatureCanvas.get().parentElement) {
-            
             canvas.getContext('2d')!.drawImage(signatureCanvas.getSignature().img, 
                                                 signatureCanvas.getSignature().corners.topLeft.x,
                                                 signatureCanvas.getSignature().corners.topLeft.y,
@@ -66,8 +64,7 @@ async function onSaveSignedPdf() {
                                                 signatureCanvas.getSignature().currentHeight);                                                                                                  
             pdf.addImage(canvas.toDataURL('image/jpeg', 0.9), 0, 0, viewerRef.value.viewports.default.width, viewerRef.value.viewports.default.height, '', 'FAST');            
             signatureCanvas.get().remove();                             
-        }
-        else{
+        } else {
             pdf.addImage(canvas.toDataURL('image/jpeg', 0.9), 0, 0, viewerRef.value.viewports.default.width, viewerRef.value.viewports.default.height, '', 'FAST');                                  
         }
     });
@@ -80,19 +77,18 @@ async function onSaveSignedPdf() {
     formData.append('file', pdfBlob, 'signed_document.pdf');
 
     try {
-        // Envia para a API (substitua 'YOUR_API_URL' pela URL real da sua API)
         const response = await axios.post('http://localhost:4000/s3/upload', formData, {
             headers: {
-                'Content-Type': 'multipart/form-data', // Necessário para envio de arquivos
-                // Caso precise de autenticação, adicione o cabeçalho de Authorization
+                'Content-Type': 'multipart/form-data',
                 'Authorization': 'Bearer YOUR_ACCESS_TOKEN',
             },
         });
 
         console.log('PDF enviado com sucesso:', response.data);
-        // Você pode tratar a resposta da API aqui (ex. URL do PDF no S3)
+        showSuccessPopup.value = true; // Exibe o pop-up após o envio bem-sucedido
     } catch (error) {
         console.error('Erro ao enviar PDF para a API:', error);
+        showErrorPopup.value = true; // Exibe o pop-up de erro
     }
 }
 
@@ -107,9 +103,8 @@ function handleOnResize(): void {
 
     const lastPageCanvas: HTMLCanvasElement = viewerRef.value.pagesCanvas[viewerRef.value.pagesCanvas.length - 1];       
     
-    // Novo tamanho / Tamanho antigo
-    const widthScale = lastPageCanvas.width/signatureCanvas.get().width; 
-    const heightScale = lastPageCanvas.height/signatureCanvas.get().height;
+    const widthScale = lastPageCanvas.width / signatureCanvas.get().width; 
+    const heightScale = lastPageCanvas.height / signatureCanvas.get().height;
 
     signatureCanvas.get().width = lastPageCanvas.width;
     signatureCanvas.get().height = lastPageCanvas.height;
@@ -150,6 +145,8 @@ function handleOnResize(): void {
             <v-divider vertical class="mx-1"></v-divider>
         </template>        
     </PdfViewer>
+
+    <!-- Pop-up para capturar assinatura -->
     <v-dialog v-model="showSignaturePad">
         <ESignature
             :width="400"
@@ -160,4 +157,27 @@ function handleOnResize(): void {
         />        
     </v-dialog>    
 
+    <!-- Pop-up de sucesso após envio -->
+    <v-dialog v-model="showSuccessPopup" max-width="400">
+        <v-card>
+            <v-card-title class="text-h5">Sucesso</v-card-title>
+            <v-card-text>PDF enviado com sucesso!</v-card-text>
+            <v-card-actions>
+                <v-spacer></v-spacer>
+                <v-btn color="primary" @click="showSuccessPopup = false">OK</v-btn>
+            </v-card-actions>
+        </v-card>
+    </v-dialog>
+
+    <!-- Pop-up de erro caso o envio falhe -->
+    <v-dialog v-model="showErrorPopup" max-width="400">
+        <v-card>
+            <v-card-title class="text-h5">Erro</v-card-title>
+            <v-card-text>Ocorreu um erro ao enviar o PDF.</v-card-text>
+            <v-card-actions>
+                <v-spacer></v-spacer>
+                <v-btn color="red" @click="showErrorPopup = false">Fechar</v-btn>
+            </v-card-actions>
+        </v-card>
+    </v-dialog>
 </template>
